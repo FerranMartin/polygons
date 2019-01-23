@@ -1,57 +1,4 @@
-function makePolygon({ position, numSides, size }) {
-  // Create a polygon points
-  const points = [];
-  for (var i = 0; i < numSides; i++) {
-    const point = {
-      x: position.x + size * Math.sin((2 * Math.PI * i) / numSides),
-      y: position.y + size * Math.cos((2 * Math.PI * i) / numSides)
-    };
-    points.push(point);
-  }
-
-  const parsedPoints = _.reduce(
-    points,
-    (parsedPoints, point) => `${parsedPoints} ${point.x},${point.y}`,
-    ""
-  );
-
-  // Create a polygon element
-  const poly = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "polygon"
-  );
-  poly.setAttribute("points", parsedPoints);
-
-  // Add it to the SVG
-  document.getElementById("mysvg").appendChild(poly);
-
-  // Return polygon element
-  return poly;
-}
-
-function makeCircle({ position, size, visible = false }) {
-  // Create a circle element
-  const circle = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "circle"
-  );
-  circle.setAttribute("cx", position.x);
-  circle.setAttribute("cy", position.y);
-  circle.setAttribute("r", size);
-  circle.setAttribute("fill", "none");
-  circle.setAttribute("stroke", "black");
-  circle.setAttribute("stroke-dasharray", 4);
-  const strokeWidth = visible ? 0.5 : 0;
-  circle.setAttribute("stroke-width", strokeWidth);
-
-  // Add it to the SVG
-  document.getElementById("mysvg").appendChild(circle);
-
-  // Return circle element
-  return circle;
-}
-
-letters = {
+const letters = {
   a: 3,
   b: 4,
   c: 5,
@@ -79,25 +26,79 @@ letters = {
   y: 28,
   z: 29
 };
+const LETTERS_OFFSET = 3;
 
-function drawName({ name, position, size, showCircle = false }) {
-  makeCircle({ position, size, visible: showCircle });
+const BIG_CHARS_BREAKPOINT = letters.l;
 
-  const charPolys = {};
+function drawName({ name, position, radius, showCircle = false }) {
+  makeCircle({ position, radius, visible: showCircle });
+
+  let numberOfBigChars = 0;
+  let bigCharsOffset = radius * 0.05;
+
   for (var i = 0; i < name.length; i++) {
     const char = name.charAt(i);
-    const poly = makePolygon({ position, numSides: letters[char], size });
+    const numSides = letters[char] + LETTERS_OFFSET;
+    const polyPosition = _.clone(position);
+    const rotationDegrees = (360 / (name.length + 1)) * i;
 
-    if (!charPolys[char]) {
-      charPolys[char] = [];
+    if (numSides >= BIG_CHARS_BREAKPOINT) {
+      if (numberOfBigChars) {
+        switch (numberOfBigChars % 4) {
+          case 0:
+            polyPosition.x += bigCharsOffset;
+            polyPosition.y += bigCharsOffset;
+            break;
+
+          case 1:
+            polyPosition.x += bigCharsOffset;
+            polyPosition.y -= bigCharsOffset;
+            break;
+
+          case 2:
+            polyPosition.x -= bigCharsOffset;
+            polyPosition.y -= bigCharsOffset;
+            break;
+
+          case 3:
+            polyPosition.x -= bigCharsOffset;
+            polyPosition.y += bigCharsOffset;
+            break;
+        }
+
+        bigCharsOffset += 2;
+      }
+      numberOfBigChars++;
     }
-    charPolys[char].push(poly);
+
+    makePolygon({ position: polyPosition, numSides, radius, rotationDegrees });
   }
 }
 
-const size = 200;
+const radius = 150;
 const eniaPos = { x: 250, y: 250 };
 const aramPos = { x: 750, y: 250 };
 
-drawName({ name: "enia", position: eniaPos, size, showCircle: true });
-drawName({ name: "aram", position: aramPos, size, showCircle: true });
+drawName({ name: "enia", position: eniaPos, radius, showCircle: true });
+drawName({ name: "aram", position: aramPos, radius, showCircle: true });
+
+drawName({
+  name: "abcdefghijklmnopqrstuvwxyz",
+  position: { x: 250, y: 750 },
+  radius,
+  showCircle: true
+});
+
+drawName({
+  name: "zyxwvutsrqponmlkjihgfedcba",
+  position: { x: 750, y: 750 },
+  radius,
+  showCircle: true
+});
+
+drawName({
+  name: "c",
+  position: { x: 250, y: 1250 },
+  radius,
+  showCircle: true
+});
